@@ -1,21 +1,18 @@
 from typing import Dict, List, Tuple, Any
 
 # ==============================================================================
-# Upgraded Peak-Yield Kaggriculture Production Agent (v4/main.py & main.py)
+# Upgraded High-Velocity Kaggriculture Agent (main.py)
 # ==============================================================================
 #
-# DESIGN GOALS & REVENUE OPTIMIZATION:
-# - Focus on fast-maturing (2-day) high-margin crops (CARROT & WHEAT).
-# - 2-day harvest turnarounds maximize cash velocity, avoiding long capital lockups.
-# - Controlled worker hiring: Max 3 hands per day (cost 4 gold/day) when cash >= 2500.
-# - Delayed land expansion (BUY_LAND) when cash >= 5500 (preserving seed/labor reserves).
-# - 100% liquidation of private shed inventory via SELL orders every single step.
-# - Priority action pipeline: urgent water -> harvest ready -> dig weeds -> move -> plant -> sell.
+# REVENUE MAXIMIZATION STRATEGY:
+# - Focus on fast 2-day turnaround high-margin crops (CARROT and WHEAT).
+# - Rapid harvest-to-cash cycles allow constant reinvestment in seeds & farm expansion.
+# - Dynamic worker assignment ensures 0 wasted turns on watering and harvesting.
+# - Controlled expansion: Early land purchase when cash >= 3000 (Day <= 14).
+# - Continuous 100% liquidation of shed inventory via SELL orders every turn.
 # ==============================================================================
 
 CROPS = ["WHEAT", "CARROT", "TOMATO", "STRAWBERRY", "MELON"]
-
-EARLY_CROPS = ["WHEAT", "CARROT"]
 
 HARVEST_AGE = {
     "WHEAT": 2,
@@ -108,19 +105,21 @@ def crop_ready_to_harvest(tile: Dict[str, Any], day: int) -> bool:
 
 
 def choose_crop(day: int, seeds: Dict[str, int]) -> str:
-    """Select best crop based on season day and available seed inventory."""
-    candidates = []
-
-    for crop in EARLY_CROPS:
-        if day <= LAST_PLANT_DAY[crop]:
-            count = int(seeds.get(crop, 0))
-            candidates.append((count, crop))
-
-    if not candidates:
+    """
+    Select optimal crop. Prefer CARROT for higher profit, WHEAT for budget fallback.
+    """
+    if day > 26:
         return "WHEAT"
 
-    candidates.sort(reverse=True)
-    return candidates[0][1]
+    carrot_seeds = int(seeds.get("CARROT", 0))
+    wheat_seeds = int(seeds.get("WHEAT", 0))
+
+    if carrot_seeds > 0 and day <= LAST_PLANT_DAY["CARROT"]:
+        return "CARROT"
+    if wheat_seeds > 0 and day <= LAST_PLANT_DAY["WHEAT"]:
+        return "WHEAT"
+
+    return "CARROT" if day <= LAST_PLANT_DAY["CARROT"] else "WHEAT"
 
 
 def build_tasks(
@@ -141,7 +140,7 @@ def build_tasks(
 
             if is_weed(tile):
                 tasks.append({
-                    "priority": 50,
+                    "priority": 40,
                     "pos": pos,
                     "action": ["DIG"],
                 })
@@ -171,7 +170,7 @@ def build_tasks(
             if is_free(tile):
                 if day <= 26:
                     tasks.append({
-                        "priority": 60,
+                        "priority": 50,
                         "pos": pos,
                         "action": ["PLANT"],
                     })
@@ -243,7 +242,7 @@ def make_market_orders(
     farm: Dict[str, Any],
     day: int
 ) -> List[List[Any]]:
-    """Construct market orders maximizing cash flow."""
+    """Construct market orders for fast velocity cash flow."""
     private = obs.get("private", {})
     shed = private.get("shed", {})
     seeds = private.get("seeds", {})
@@ -271,31 +270,31 @@ def make_market_orders(
 
     hires_today = int(farm.get("hires_today", 0))
 
-    # 2. Controlled Hiring: Max 3 hands per day when cash >= 2500 and day <= 25
-    if day <= 25 and hires_today == 0 and money >= 2500:
+    # 2. Worker Hiring: Max 3 hands per day when cash >= 2000
+    if day <= 25 and hires_today == 0 and money >= 2000:
         orders.extend([
             ["HIRE"],
             ["HIRE"],
             ["HIRE"],
         ])
 
-    # 3. Seed Procurement: Keep steady seed inventory
+    # 3. Seed Procurement: Keep steady seed inventory of CARROT and WHEAT
     if day <= 25:
-        wheat_seeds = int(seeds.get("WHEAT", 0))
         carrot_seeds = int(seeds.get("CARROT", 0))
+        wheat_seeds = int(seeds.get("WHEAT", 0))
+
+        if carrot_seeds < 3 and money >= 150:
+            orders.append(["BUY_SEED", "CARROT", 5])
 
         if wheat_seeds < 3 and money >= 100:
             orders.append(["BUY_SEED", "WHEAT", 5])
 
-        if carrot_seeds < 2 and money >= 150:
-            orders.append(["BUY_SEED", "CARROT", 3])
-
-    # 4. Expansion: Delayed until cash >= 5500
+    # 4. Land Expansion (Threshold = 4500 gold)
     unlocked_quadrants = farm.get("unlocked_quadrants", [])
     if (
         day <= 14
         and "NE" not in unlocked_quadrants
-        and money >= 5500
+        and money >= 4500
         and len(orders) < 9
     ):
         orders.append(["BUY_LAND"])
