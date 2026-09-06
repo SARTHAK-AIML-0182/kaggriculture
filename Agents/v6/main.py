@@ -1,7 +1,7 @@
 from typing import Dict, List, Tuple, Any
 
 # ==============================================================================
-# v6 Elite High-Yield Compound Agent (main.py)
+# v6 Elite High-Yield Compound Agent (Targeting 200k+ Revenue)
 # ==============================================================================
 #
 # ARCHITECTURAL INNOVATIONS:
@@ -341,6 +341,7 @@ def make_market_orders(
     if isinstance(market_prices, dict) and money >= 600 and len(orders) < 8:
         for item, base_price in BASELINE_PRICES.items():
             curr_price = float(market_prices.get(item, base_price))
+            # Buy underpriced items when market price is at least 25% below baseline
             if curr_price <= base_price * 0.75 and money >= curr_price * 5:
                 orders.append(["BUY_PRODUCT", item, 5])
                 money -= curr_price * 5
