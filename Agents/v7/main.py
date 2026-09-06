@@ -309,6 +309,7 @@ def assign_worker_actions(
 
     for worker_idx, worker_pos in enumerate(workers):
         # Module 1 Safety Check: If inventory >= 8 or turn >= 22, path to shed tile and DROP
+        # Hand personal items can be inspected in farm state if available, or turn >= 22
         if turn_in_day >= 22:
             shed_target = nearest_shed_tile(worker_pos)
             if worker_pos != shed_target:
@@ -334,6 +335,7 @@ def assign_worker_actions(
             # Farmer (index 0) can work anywhere; hands prefer their assigned quadrant
             if worker_idx > 0:
                 if not (q_xmin <= tx <= q_xmax and q_ymin <= ty <= q_ymax):
+                    # Lower priority for out-of-quadrant tasks
                     out_of_bounds_penalty = 100
                 else:
                     out_of_bounds_penalty = 0
@@ -413,6 +415,7 @@ def make_market_orders(
         "FERTILIZER",
     ]
 
+    # Prioritize items matching active town shop demands first
     ordered_sellable = [item for item in sellable_items if item in town_demands]
     ordered_sellable.extend([item for item in sellable_items if item not in town_demands])
 
