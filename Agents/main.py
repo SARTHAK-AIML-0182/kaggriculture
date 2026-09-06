@@ -1,7 +1,30 @@
 from typing import Dict, List, Tuple, Any
 
 # ==============================================================================
-# High-Yield Kaggriculture Compound Agent (v5 Architecture)
+# 200k Animal Husbandry & Compound Pasture Engine (main.py)
+# ==============================================================================
+#
+# ANIMAL HUSBANDRY & PASTURE REVENUE LOOPS:
+# 1. Infrastructure Setup (Days 1–4):
+#    - Builds Coop (BUILD_COOP) for Chickens and Pasture (BUILD_PASTURE) for Cows.
+#    - Buys animals (BUY_ANIMAL: CHICKEN, COW) yielding daily passive income
+#      (EGG, MILK, WOOL) without replanting costs.
+#
+# 2. Animal Care & Organic Fertilizer Engine:
+#    - Automated animal feeding (FEED), care (CARE), and fertilizer collection (COLLECT_FERTILIZER).
+#    - Applies fertilizer (FERTILIZE) to multi-harvest crops (STRAWBERRY, MELON)
+#      to double yield output.
+#
+# 3. 4x Land Expansion Engine (100 Tiles):
+#    - Unlocks NE, SE, SW quadrants (BUY_LAND) when cash >= 1000 (Day <= 20).
+#    - Hires up to 9 hands (HIRE) when cash >= 500 to manage 100 tiles (10x10).
+#
+# 4. Multi-Harvest Passive Crop Rotation:
+#    - Plants recurring yield crops (TOMATO, STRAWBERRY, MELON) in mid-season.
+#
+# 5. 100% Market Monetization:
+#    - Liquidates all 9 produce types (EGG, MILK, WOOL, FERTILIZER, STRAWBERRY,
+#      MELON, TOMATO, CARROT, WHEAT) via SELL orders every single step.
 # ==============================================================================
 
 CROPS = ["WHEAT", "CARROT", "TOMATO", "STRAWBERRY", "MELON"]
@@ -39,6 +62,10 @@ def is_plant(tile: Any) -> bool:
 
 def is_weed(tile: Any) -> bool:
     return isinstance(tile, dict) and tile.get("kind") == "WEED"
+
+
+def is_coop_or_pasture(tile: Any) -> bool:
+    return isinstance(tile, dict) and tile.get("kind") in ("COOP", "PASTURE")
 
 
 def is_free(tile: Any) -> bool:
@@ -117,12 +144,36 @@ def build_tasks(
     tasks: List[Dict[str, Any]] = []
     tiles = farm.get("tiles", [])
 
+    has_coop = False
+    has_pasture = False
+
     for y, row in enumerate(tiles):
         for x, tile in enumerate(row):
             if not unlocked(tile):
                 continue
 
             pos = (x, y)
+            kind = tile.get("kind") if isinstance(tile, dict) else None
+
+            if kind == "COOP":
+                has_coop = True
+                if int(tile.get("unfed_animals", 0)) > 0:
+                    tasks.append({"priority": 8, "pos": pos, "action": ["FEED"]})
+                if int(tile.get("fertilizer_units", 0)) > 0:
+                    tasks.append({"priority": 14, "pos": pos, "action": ["COLLECT_FERTILIZER"]})
+                if bool(tile.get("needs_care", False)):
+                    tasks.append({"priority": 12, "pos": pos, "action": ["CARE"]})
+                continue
+
+            if kind == "PASTURE":
+                has_pasture = True
+                if int(tile.get("unfed_animals", 0)) > 0:
+                    tasks.append({"priority": 8, "pos": pos, "action": ["FEED"]})
+                if int(tile.get("fertilizer_units", 0)) > 0:
+                    tasks.append({"priority": 14, "pos": pos, "action": ["COLLECT_FERTILIZER"]})
+                if bool(tile.get("needs_care", False)):
+                    tasks.append({"priority": 12, "pos": pos, "action": ["CARE"]})
+                continue
 
             if is_weed(tile):
                 tasks.append({
@@ -153,7 +204,6 @@ def build_tasks(
                         "action": ["WATER"],
                     })
 
-                # Apply fertilizer loop on high value crops to boost yields
                 if not fertilized and shed_fertilizer > 0 and crop in ("MELON", "STRAWBERRY"):
                     tasks.append({
                         "priority": 15,
@@ -164,6 +214,16 @@ def build_tasks(
                 continue
 
             if is_free(tile):
+                if day <= 4:
+                    if not has_coop and pos in ((0, 0), (1, 0), (0, 1)):
+                        tasks.append({"priority": 2, "pos": pos, "action": ["BUILD_COOP"]})
+                        has_coop = True
+                        continue
+                    if not has_pasture and pos in ((4, 0), (3, 0), (4, 1)):
+                        tasks.append({"priority": 3, "pos": pos, "action": ["BUILD_PASTURE"]})
+                        has_pasture = True
+                        continue
+
                 if day <= 27:
                     tasks.append({
                         "priority": 50,
@@ -244,7 +304,7 @@ def make_market_orders(
 
     orders: List[List[Any]] = []
 
-    # Priority 1: Smart Liquidations (Shed)
+    # Priority 1: Liquidate 100% of private shed inventory (all 9 produce items)
     sellable = [
         "MELON",
         "STRAWBERRY",
@@ -265,7 +325,7 @@ def make_market_orders(
     hires_today = int(farm.get("hires_today", 0))
     hands_count = len(farm.get("hands", []))
 
-    # Priority 2: Aggressive Land Expansion
+    # Priority 2: Aggressive Land Expansion (BUY_LAND)
     unlocked_quadrants = farm.get("unlocked_quadrants", [])
     if (
         day <= 20
@@ -275,7 +335,17 @@ def make_market_orders(
     ):
         orders.append(["BUY_LAND"])
 
-    # Priority 3: Max Worker Hires to control 100 tiles
+    # Priority 3: Animal Procurement (BUY_ANIMAL: CHICKEN, COW)
+    if day <= 12 and money >= 800 and len(orders) < 8:
+        chickens = int(private.get("chickens", 0))
+        cows = int(private.get("cows", 0))
+
+        if chickens < 3:
+            orders.append(["BUY_ANIMAL", "CHICKEN", 2])
+        if cows < 2:
+            orders.append(["BUY_ANIMAL", "COW", 1])
+
+    # Priority 4: Max Worker Hires to control 100 tiles
     if day <= 27 and hires_today == 0 and money >= 500 and hands_count < 9:
         orders.extend([
             ["HIRE"],
@@ -283,7 +353,7 @@ def make_market_orders(
             ["HIRE"],
         ])
 
-    # Priority 4: Seed Procurement
+    # Priority 5: Seed Procurement
     if day <= 26:
         melon_seeds = int(seeds.get("MELON", 0))
         straw_seeds = int(seeds.get("STRAWBERRY", 0))

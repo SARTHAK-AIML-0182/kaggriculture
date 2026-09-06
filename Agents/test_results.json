@@ -2,451 +2,511 @@
   {
     "matchup": "main.py vs starter",
     "seed": 12345,
-    "p0_reward": 21202.0,
-    "p1_reward": 3600.0,
+    "p0_reward": 11384.0,
+    "p1_reward": 3412.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 21202.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 11384.0,
     "money_non_positive": false,
-    "noop_count": 17
+    "noop_count": 1
   },
   {
     "matchup": "main.py vs starter",
     "seed": 101,
-    "p0_reward": 17282.0,
-    "p1_reward": 3756.0,
+    "p0_reward": 12016.0,
+    "p1_reward": 3678.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 17282.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 12016.0,
     "money_non_positive": false,
     "noop_count": 1
   },
   {
     "matchup": "main.py vs starter",
     "seed": 102,
-    "p0_reward": 14223.0,
-    "p1_reward": 3489.0,
+    "p0_reward": 17978.0,
+    "p1_reward": 3552.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 14223.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 17978.0,
     "money_non_positive": false,
-    "noop_count": 10
+    "noop_count": 13
   },
   {
     "matchup": "main.py vs starter",
     "seed": 103,
-    "p0_reward": 13029.0,
-    "p1_reward": 3383.0,
+    "p0_reward": 15077.0,
+    "p1_reward": 3402.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 13029.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 15077.0,
     "money_non_positive": false,
-    "noop_count": 5
+    "noop_count": 29
   },
   {
     "matchup": "main.py vs starter",
     "seed": 104,
-    "p0_reward": 16528.0,
-    "p1_reward": 3523.0,
+    "p0_reward": 13772.0,
+    "p1_reward": 3524.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 16528.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 13772.0,
     "money_non_positive": false,
     "noop_count": 1
   },
   {
     "matchup": "main.py vs starter",
     "seed": 105,
-    "p0_reward": 14670.0,
-    "p1_reward": 3344.0,
+    "p0_reward": 11807.0,
+    "p1_reward": 3392.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 14670.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 11807.0,
     "money_non_positive": false,
-    "noop_count": 5
+    "noop_count": 1
   },
   {
     "matchup": "main.py vs starter",
     "seed": 106,
-    "p0_reward": 5806.0,
-    "p1_reward": 3633.0,
+    "p0_reward": 15047.0,
+    "p1_reward": 3695.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 5806.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 15047.0,
     "money_non_positive": false,
     "noop_count": 1
   },
   {
     "matchup": "main.py vs starter",
     "seed": 107,
-    "p0_reward": 14508.0,
-    "p1_reward": 3562.0,
+    "p0_reward": 17380.0,
+    "p1_reward": 4309.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 14508.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 17380.0,
     "money_non_positive": false,
-    "noop_count": 37
+    "noop_count": 13
   },
   {
     "matchup": "main.py vs starter",
     "seed": 108,
-    "p0_reward": 13668.0,
-    "p1_reward": 3599.0,
+    "p0_reward": 20778.0,
+    "p1_reward": 3419.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 13668.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 20778.0,
     "money_non_positive": false,
-    "noop_count": 8
+    "noop_count": 5
   },
   {
     "matchup": "main.py vs starter",
     "seed": 109,
-    "p0_reward": 10471.0,
-    "p1_reward": 3757.0,
+    "p0_reward": 13259.0,
+    "p1_reward": 3529.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 10471.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 13259.0,
     "money_non_positive": false,
-    "noop_count": 8
+    "noop_count": 11
   },
   {
     "matchup": "main.py vs random",
     "seed": 12345,
-    "p0_reward": 21330.0,
+    "p0_reward": 11384.0,
     "p1_reward": 0.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 21330.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 11384.0,
     "money_non_positive": false,
-    "noop_count": 17
+    "noop_count": 1
   },
   {
     "matchup": "main.py vs random",
     "seed": 101,
-    "p0_reward": 16768.0,
+    "p0_reward": 11784.0,
     "p1_reward": 0.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 16768.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 11784.0,
     "money_non_positive": false,
     "noop_count": 1
   },
   {
     "matchup": "main.py vs random",
     "seed": 102,
-    "p0_reward": 14173.0,
+    "p0_reward": 17996.0,
     "p1_reward": 0.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 14173.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 17996.0,
     "money_non_positive": false,
-    "noop_count": 10
+    "noop_count": 13
   },
   {
     "matchup": "main.py vs random",
     "seed": 103,
-    "p0_reward": 13101.0,
+    "p0_reward": 15515.0,
     "p1_reward": 0.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 13101.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 15515.0,
     "money_non_positive": false,
-    "noop_count": 5
+    "noop_count": 29
   },
   {
     "matchup": "main.py vs random",
     "seed": 104,
-    "p0_reward": 16762.0,
+    "p0_reward": 13805.0,
     "p1_reward": 0.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 16762.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 13805.0,
     "money_non_positive": false,
     "noop_count": 1
   },
   {
     "matchup": "main.py vs random",
     "seed": 105,
-    "p0_reward": 15008.0,
-    "p1_reward": 0.0,
+    "p0_reward": 12281.0,
+    "p1_reward": 10.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 15008.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 12281.0,
     "money_non_positive": false,
-    "noop_count": 5
+    "noop_count": 1
   },
   {
     "matchup": "main.py vs random",
     "seed": 106,
-    "p0_reward": 5797.0,
+    "p0_reward": 14482.0,
     "p1_reward": 0.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 5797.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 14482.0,
     "money_non_positive": false,
     "noop_count": 1
   },
   {
     "matchup": "main.py vs random",
     "seed": 107,
-    "p0_reward": 14331.0,
+    "p0_reward": 16529.0,
     "p1_reward": 0.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 14331.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 16529.0,
     "money_non_positive": false,
-    "noop_count": 37
+    "noop_count": 13
   },
   {
     "matchup": "main.py vs random",
     "seed": 108,
-    "p0_reward": 13552.0,
+    "p0_reward": 20932.0,
     "p1_reward": 0.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 13552.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 20932.0,
     "money_non_positive": false,
-    "noop_count": 8
+    "noop_count": 5
   },
   {
     "matchup": "main.py vs random",
     "seed": 109,
-    "p0_reward": 10931.0,
+    "p0_reward": 13534.0,
     "p1_reward": 0.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 10931.0,
-    "money_non_positive": false,
-    "noop_count": 8
-  },
-  {
-    "matchup": "main.py vs main.py",
-    "seed": 12345,
-    "p0_reward": 13975.0,
-    "p1_reward": 5277.0,
-    "p0_status": "DONE",
-    "p1_status": "DONE",
-    "timeout": false,
-    "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 13975.0,
-    "money_non_positive": false,
-    "noop_count": 17
-  },
-  {
-    "matchup": "main.py vs main.py",
-    "seed": 101,
-    "p0_reward": 8293.0,
-    "p1_reward": 9471.0,
-    "p0_status": "DONE",
-    "p1_status": "DONE",
-    "timeout": false,
-    "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 8293.0,
-    "money_non_positive": false,
-    "noop_count": 1
-  },
-  {
-    "matchup": "main.py vs main.py",
-    "seed": 102,
-    "p0_reward": 7689.0,
-    "p1_reward": 13026.0,
-    "p0_status": "DONE",
-    "p1_status": "DONE",
-    "timeout": false,
-    "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 7689.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 13534.0,
     "money_non_positive": false,
     "noop_count": 11
   },
   {
     "matchup": "main.py vs main.py",
-    "seed": 103,
-    "p0_reward": 8797.0,
-    "p1_reward": 9779.0,
+    "seed": 12345,
+    "p0_reward": 6854.0,
+    "p1_reward": 9236.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 8797.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 6854.0,
     "money_non_positive": false,
-    "noop_count": 5
+    "noop_count": 1
+  },
+  {
+    "matchup": "main.py vs main.py",
+    "seed": 101,
+    "p0_reward": 5713.0,
+    "p1_reward": 10679.0,
+    "p0_status": "DONE",
+    "p1_status": "DONE",
+    "timeout": false,
+    "crashed": false,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 5713.0,
+    "money_non_positive": false,
+    "noop_count": 1
+  },
+  {
+    "matchup": "main.py vs main.py",
+    "seed": 102,
+    "p0_reward": 8215.0,
+    "p1_reward": 7883.0,
+    "p0_status": "DONE",
+    "p1_status": "DONE",
+    "timeout": false,
+    "crashed": false,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 8215.0,
+    "money_non_positive": false,
+    "noop_count": 13
+  },
+  {
+    "matchup": "main.py vs main.py",
+    "seed": 103,
+    "p0_reward": 7882.0,
+    "p1_reward": 9813.0,
+    "p0_status": "DONE",
+    "p1_status": "DONE",
+    "timeout": false,
+    "crashed": false,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 7882.0,
+    "money_non_positive": false,
+    "noop_count": 29
   },
   {
     "matchup": "main.py vs main.py",
     "seed": 104,
-    "p0_reward": 8422.0,
-    "p1_reward": 9907.0,
+    "p0_reward": 9510.0,
+    "p1_reward": 6602.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 8422.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 9510.0,
     "money_non_positive": false,
     "noop_count": 1
   },
   {
     "matchup": "main.py vs main.py",
     "seed": 105,
-    "p0_reward": 3823.0,
-    "p1_reward": 12370.0,
+    "p0_reward": 8910.0,
+    "p1_reward": 2750.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 3823.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 8910.0,
     "money_non_positive": false,
     "noop_count": 1
   },
   {
     "matchup": "main.py vs main.py",
     "seed": 106,
-    "p0_reward": 6605.0,
-    "p1_reward": 8733.0,
+    "p0_reward": 6607.0,
+    "p1_reward": 8160.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 6605.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 6607.0,
     "money_non_positive": false,
     "noop_count": 1
   },
   {
     "matchup": "main.py vs main.py",
     "seed": 107,
-    "p0_reward": 6857.0,
-    "p1_reward": 8729.0,
+    "p0_reward": 6691.0,
+    "p1_reward": 11069.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 6857.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 6691.0,
     "money_non_positive": false,
-    "noop_count": 1
+    "noop_count": 5
   },
   {
     "matchup": "main.py vs main.py",
     "seed": 108,
-    "p0_reward": 8640.0,
-    "p1_reward": 9385.0,
+    "p0_reward": 10205.0,
+    "p1_reward": 8672.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 8640.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 10205.0,
     "money_non_positive": false,
-    "noop_count": 10
+    "noop_count": 5
   },
   {
     "matchup": "main.py vs main.py",
     "seed": 109,
-    "p0_reward": 7075.0,
-    "p1_reward": 13010.0,
+    "p0_reward": 10907.0,
+    "p1_reward": 14267.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
     "crashed": false,
-    "unsold_items": {},
-    "unsold_remaining": false,
-    "p0_money": 7075.0,
+    "unsold_items": {
+      "COW": 1
+    },
+    "unsold_remaining": true,
+    "p0_money": 10907.0,
     "money_non_positive": false,
-    "noop_count": 8
+    "noop_count": 2
   }
 ]
