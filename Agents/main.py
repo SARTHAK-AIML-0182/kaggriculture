@@ -1,15 +1,7 @@
 from typing import Dict, List, Tuple, Any
 
 # ==============================================================================
-# Upgraded High-Velocity Kaggriculture Agent (main.py)
-# ==============================================================================
-#
-# REVENUE MAXIMIZATION STRATEGY:
-# - Focus on fast 2-day turnaround high-margin crops (CARROT and WHEAT).
-# - Rapid harvest-to-cash cycles allow constant reinvestment in seeds & farm expansion.
-# - Dynamic worker assignment ensures 0 wasted turns on watering and harvesting.
-# - Controlled expansion: Early land purchase when cash >= 3000 (Day <= 14).
-# - Continuous 100% liquidation of shed inventory via SELL orders every turn.
+# High-Yield Kaggriculture Compound Agent (v5 Architecture)
 # ==============================================================================
 
 CROPS = ["WHEAT", "CARROT", "TOMATO", "STRAWBERRY", "MELON"]
@@ -23,11 +15,11 @@ HARVEST_AGE = {
 }
 
 LAST_PLANT_DAY = {
-    "WHEAT": 26,
-    "CARROT": 26,
-    "TOMATO": 21,
-    "STRAWBERRY": 19,
-    "MELON": 19,
+    "WHEAT": 28,
+    "CARROT": 28,
+    "TOMATO": 22,
+    "STRAWBERRY": 20,
+    "MELON": 20,
 }
 
 
@@ -42,35 +34,26 @@ def tile_at(farm: Dict[str, Any], x: int, y: int) -> Any:
 
 
 def is_plant(tile: Any) -> bool:
-    """Check if tile contains an active crop plant."""
     return isinstance(tile, dict) and tile.get("kind") == "PLANT"
 
 
 def is_weed(tile: Any) -> bool:
-    """Check if tile contains a weed."""
     return isinstance(tile, dict) and tile.get("kind") == "WEED"
 
 
 def is_free(tile: Any) -> bool:
-    """Check if tile is unlocked and empty."""
     return tile is None
 
 
 def unlocked(tile: Any) -> bool:
-    """Check if tile is accessible (not locked)."""
     return tile != "LOCKED"
 
 
 def manhattan(a: Tuple[int, int], b: Tuple[int, int]) -> int:
-    """Compute Manhattan distance between two [x, y] coordinates."""
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
 
-def movement_toward(
-    current: Tuple[int, int],
-    target: Tuple[int, int]
-) -> List[str]:
-    """Generate step movement action towards target [x, y]."""
+def movement_toward(current: Tuple[int, int], target: Tuple[int, int]) -> List[str]:
     x, y = current
     tx, ty = target
 
@@ -87,7 +70,6 @@ def movement_toward(
 
 
 def crop_ready_to_harvest(tile: Dict[str, Any], day: int) -> bool:
-    """Verify crop maturity and yield availability before harvesting."""
     crop = tile.get("crop")
     yield_units = int(tile.get("yield_units", 0))
 
@@ -105,19 +87,23 @@ def crop_ready_to_harvest(tile: Dict[str, Any], day: int) -> bool:
 
 
 def choose_crop(day: int, seeds: Dict[str, int]) -> str:
-    """
-    Select optimal crop. Prefer CARROT for higher profit, WHEAT for budget fallback.
-    """
-    if day > 26:
+    if day > 27:
         return "WHEAT"
 
-    carrot_seeds = int(seeds.get("CARROT", 0))
-    wheat_seeds = int(seeds.get("WHEAT", 0))
+    if day <= 5:
+        preferred = ["CARROT", "WHEAT"]
+    elif day <= 18:
+        preferred = ["MELON", "STRAWBERRY", "TOMATO", "CARROT", "WHEAT"]
+    else:
+        preferred = ["CARROT", "WHEAT"]
 
-    if carrot_seeds > 0 and day <= LAST_PLANT_DAY["CARROT"]:
-        return "CARROT"
-    if wheat_seeds > 0 and day <= LAST_PLANT_DAY["WHEAT"]:
-        return "WHEAT"
+    for crop in preferred:
+        if day <= LAST_PLANT_DAY[crop] and int(seeds.get(crop, 0)) > 0:
+            return crop
+
+    for crop in preferred:
+        if day <= LAST_PLANT_DAY[crop]:
+            return crop
 
     return "CARROT" if day <= LAST_PLANT_DAY["CARROT"] else "WHEAT"
 
@@ -125,9 +111,9 @@ def choose_crop(day: int, seeds: Dict[str, int]) -> str:
 def build_tasks(
     obs: Dict[str, Any],
     farm: Dict[str, Any],
-    day: int
+    day: int,
+    shed_fertilizer: int
 ) -> List[Dict[str, Any]]:
-    """Construct prioritized task queue for farm tiles."""
     tasks: List[Dict[str, Any]] = []
     tiles = farm.get("tiles", [])
 
@@ -140,7 +126,7 @@ def build_tasks(
 
             if is_weed(tile):
                 tasks.append({
-                    "priority": 40,
+                    "priority": 30,
                     "pos": pos,
                     "action": ["DIG"],
                 })
@@ -149,6 +135,15 @@ def build_tasks(
             if is_plant(tile):
                 watered = bool(tile.get("watered_today", False))
                 unwatered = int(tile.get("consecutive_unwatered", 0))
+                fertilized = bool(tile.get("fertilized_today", False))
+                crop = tile.get("crop")
+
+                if crop_ready_to_harvest(tile, day):
+                    tasks.append({
+                        "priority": 5,
+                        "pos": pos,
+                        "action": ["HARVEST"],
+                    })
 
                 if not watered:
                     prio = 0 if unwatered >= 1 else 10
@@ -158,17 +153,18 @@ def build_tasks(
                         "action": ["WATER"],
                     })
 
-                if crop_ready_to_harvest(tile, day):
+                # Apply fertilizer loop on high value crops to boost yields
+                if not fertilized and shed_fertilizer > 0 and crop in ("MELON", "STRAWBERRY"):
                     tasks.append({
-                        "priority": 20,
+                        "priority": 15,
                         "pos": pos,
-                        "action": ["HARVEST"],
+                        "action": ["FERTILIZE"],
                     })
 
                 continue
 
             if is_free(tile):
-                if day <= 26:
+                if day <= 27:
                     tasks.append({
                         "priority": 50,
                         "pos": pos,
@@ -185,7 +181,6 @@ def assign_worker_actions(
     tasks: List[Dict[str, Any]],
     crop_to_plant: str
 ) -> Tuple[List[str], List[List[str]]]:
-    """Assign unique worker-to-tile tasks using Manhattan distance matching."""
     workers: List[Tuple[int, int]] = []
 
     farmer = farm.get("farmer", [4, 4])
@@ -242,7 +237,6 @@ def make_market_orders(
     farm: Dict[str, Any],
     day: int
 ) -> List[List[Any]]:
-    """Construct market orders for fast velocity cash flow."""
     private = obs.get("private", {})
     shed = private.get("shed", {})
     seeds = private.get("seeds", {})
@@ -250,13 +244,13 @@ def make_market_orders(
 
     orders: List[List[Any]] = []
 
-    # 1. Liquidate 100% of shed inventory
+    # Priority 1: Smart Liquidations (Shed)
     sellable = [
-        "WHEAT",
-        "CARROT",
-        "TOMATO",
-        "STRAWBERRY",
         "MELON",
+        "STRAWBERRY",
+        "TOMATO",
+        "CARROT",
+        "WHEAT",
         "EGG",
         "MILK",
         "WOOL",
@@ -269,35 +263,44 @@ def make_market_orders(
             orders.append(["SELL", item, amount])
 
     hires_today = int(farm.get("hires_today", 0))
+    hands_count = len(farm.get("hands", []))
 
-    # 2. Worker Hiring: Max 3 hands per day when cash >= 2000
-    if day <= 25 and hires_today == 0 and money >= 2000:
+    # Priority 2: Aggressive Land Expansion
+    unlocked_quadrants = farm.get("unlocked_quadrants", [])
+    if (
+        day <= 20
+        and len(unlocked_quadrants) < 4
+        and money >= 1000
+        and len(orders) < 9
+    ):
+        orders.append(["BUY_LAND"])
+
+    # Priority 3: Max Worker Hires to control 100 tiles
+    if day <= 27 and hires_today == 0 and money >= 500 and hands_count < 9:
         orders.extend([
             ["HIRE"],
             ["HIRE"],
             ["HIRE"],
         ])
 
-    # 3. Seed Procurement: Keep steady seed inventory of CARROT and WHEAT
-    if day <= 25:
+    # Priority 4: Seed Procurement
+    if day <= 26:
+        melon_seeds = int(seeds.get("MELON", 0))
+        straw_seeds = int(seeds.get("STRAWBERRY", 0))
         carrot_seeds = int(seeds.get("CARROT", 0))
         wheat_seeds = int(seeds.get("WHEAT", 0))
 
-        if carrot_seeds < 3 and money >= 150:
-            orders.append(["BUY_SEED", "CARROT", 5])
+        if day <= 18:
+            if melon_seeds < 10 and money >= 500:
+                orders.append(["BUY_SEED", "MELON", 10])
+            if straw_seeds < 10 and money >= 400:
+                orders.append(["BUY_SEED", "STRAWBERRY", 10])
 
-        if wheat_seeds < 3 and money >= 100:
-            orders.append(["BUY_SEED", "WHEAT", 5])
+        if carrot_seeds < 10 and money >= 200:
+            orders.append(["BUY_SEED", "CARROT", 10])
 
-    # 4. Land Expansion (Threshold = 4500 gold)
-    unlocked_quadrants = farm.get("unlocked_quadrants", [])
-    if (
-        day <= 14
-        and "NE" not in unlocked_quadrants
-        and money >= 4500
-        and len(orders) < 9
-    ):
-        orders.append(["BUY_LAND"])
+        if wheat_seeds < 10 and money >= 100:
+            orders.append(["BUY_SEED", "WHEAT", 10])
 
     return orders[:10]
 
@@ -319,9 +322,11 @@ def agent(obs: Dict[str, Any], config: Any = None) -> Dict[str, Any]:
         day = int(obs.get("day", 0))
         private = obs.get("private", {})
         seeds = private.get("seeds", {})
+        shed = private.get("shed", {})
+        shed_fertilizer = int(shed.get("FERTILIZER", 0))
 
         crop_to_plant = choose_crop(day, seeds)
-        tasks = build_tasks(obs, farm, day)
+        tasks = build_tasks(obs, farm, day, shed_fertilizer)
 
         farmer_action, hand_actions = assign_worker_actions(
             obs=obs,
