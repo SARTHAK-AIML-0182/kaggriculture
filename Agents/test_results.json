@@ -190,7 +190,7 @@
   {
     "matchup": "main.py vs random",
     "seed": 101,
-    "p0_reward": 21946.0,
+    "p0_reward": 21911.0,
     "p1_reward": 0.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
@@ -200,15 +200,15 @@
       "COW": 1
     },
     "unsold_remaining": true,
-    "p0_money": 21946.0,
+    "p0_money": 21911.0,
     "money_non_positive": false,
     "noop_count": 14
   },
   {
     "matchup": "main.py vs random",
     "seed": 102,
-    "p0_reward": 25934.0,
-    "p1_reward": 30.0,
+    "p0_reward": 25854.0,
+    "p1_reward": 0.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
@@ -217,7 +217,7 @@
       "COW": 1
     },
     "unsold_remaining": true,
-    "p0_money": 25934.0,
+    "p0_money": 25854.0,
     "money_non_positive": false,
     "noop_count": 31
   },
@@ -225,7 +225,7 @@
     "matchup": "main.py vs random",
     "seed": 103,
     "p0_reward": 3109.0,
-    "p1_reward": 170.0,
+    "p1_reward": 0.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
@@ -242,7 +242,7 @@
   {
     "matchup": "main.py vs random",
     "seed": 104,
-    "p0_reward": 20850.0,
+    "p0_reward": 20930.0,
     "p1_reward": 0.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
@@ -252,7 +252,7 @@
       "COW": 1
     },
     "unsold_remaining": true,
-    "p0_money": 20850.0,
+    "p0_money": 20930.0,
     "money_non_positive": false,
     "noop_count": 15
   },
@@ -276,7 +276,7 @@
   {
     "matchup": "main.py vs random",
     "seed": 106,
-    "p0_reward": 20524.0,
+    "p0_reward": 20512.0,
     "p1_reward": 0.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
@@ -286,15 +286,15 @@
       "COW": 1
     },
     "unsold_remaining": true,
-    "p0_money": 20524.0,
+    "p0_money": 20512.0,
     "money_non_positive": false,
     "noop_count": 2
   },
   {
     "matchup": "main.py vs random",
     "seed": 107,
-    "p0_reward": 22470.0,
-    "p1_reward": 50.0,
+    "p0_reward": 22333.0,
+    "p1_reward": 0.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
@@ -303,7 +303,7 @@
       "COW": 1
     },
     "unsold_remaining": true,
-    "p0_money": 22470.0,
+    "p0_money": 22333.0,
     "money_non_positive": false,
     "noop_count": 25
   },
@@ -328,7 +328,7 @@
     "matchup": "main.py vs random",
     "seed": 109,
     "p0_reward": 2073.0,
-    "p1_reward": 0.0,
+    "p1_reward": 30.0,
     "p0_status": "DONE",
     "p1_status": "DONE",
     "timeout": false,
