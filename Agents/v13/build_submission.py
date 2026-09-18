@@ -38,14 +38,23 @@ def build():
             lines = f.readlines()
             
         code_lines.append(f"# --- Module: {filename} ---")
+        in_multiline_import = False
         for line in lines:
-            # Strip module-internal imports
             stripped = line.strip()
+            if in_multiline_import:
+                if ")" in stripped:
+                    in_multiline_import = False
+                continue
+
             if stripped.startswith("from ") or stripped.startswith("import "):
-                tokens = stripped.replace(",", " ").split()
+                tokens = stripped.replace(",", " ").replace("(", " ").split()
                 if any(mod in tokens for mod in imported_modules):
+                    if "(" in stripped and ")" not in stripped:
+                        in_multiline_import = True
                     continue
                 if any(mod in stripped for mod in ["typing", "dataclasses", "math", "collections"]):
+                    if "(" in stripped and ")" not in stripped:
+                        in_multiline_import = True
                     continue
             code_lines.append(line.rstrip())
         code_lines.append("\n")

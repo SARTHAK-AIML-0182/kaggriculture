@@ -18,11 +18,11 @@ HARVEST_AGE = {
 }
 
 LAST_PLANT_DAY = {
-    "WHEAT": 26,
-    "CARROT": 26,
+    "WHEAT": 25,
+    "CARROT": 25,
     "TOMATO": 15,
     "STRAWBERRY": 15,
-    "MELON": 17,
+    "MELON": 15,
 }
 
 
@@ -78,6 +78,61 @@ def is_pasture(tile: Any) -> bool:
 
 def is_coop(tile: Any) -> bool:
     return isinstance(tile, dict) and tile.get("kind") == "COOP"
+
+
+QUADRANT_SHED_TILES = {
+    "NW": (4, 4),
+    "NE": (5, 4),
+    "SW": (4, 5),
+    "SE": (5, 5),
+}
+
+STRUCTURE_TILES = {
+    (3, 4): ("PASTURE", "SHEEP", "NW"),
+    (6, 4): ("PASTURE", "COW", "NE"),
+    (3, 5): ("COOP", "GOOSE", "SW"),
+    (6, 5): ("PASTURE", "SHEEP", "SE"),
+}
+
+ANIMALS_CONFIG = {
+    "SHEEP": {"cost": 500, "structure": "PASTURE", "product": "WOOL", "interval": 3},
+    "COW": {"cost": 400, "structure": "PASTURE", "product": "MILK", "interval": 2},
+    "GOOSE": {"cost": 300, "structure": "COOP", "product": "EGG", "interval": 1},
+}
+
+
+def count_free_unlocked_tiles(tiles: List[List[Any]]) -> int:
+    cnt = 0
+    for row in tiles:
+        if isinstance(row, list):
+            for t in row:
+                if unlocked(t) and is_free(t):
+                    cnt += 1
+    return cnt
+
+
+def has_animal(tile: Any) -> bool:
+    return isinstance(tile, dict) and "animal" in tile
+
+
+def is_empty_structure(tile: Any) -> bool:
+    return isinstance(tile, dict) and tile.get("kind") in ("PASTURE", "COOP") and "animal" not in tile
+
+
+def animal_ready_to_harvest(tile: Any) -> bool:
+    return has_animal(tile) and int(tile.get("yield_units", 0)) > 0
+
+
+def animal_has_fertilizer(tile: Any) -> bool:
+    return has_animal(tile) and bool(tile.get("fertilizer_available", False))
+
+
+def animal_needs_care(tile: Any) -> bool:
+    return has_animal(tile) and not bool(tile.get("cared_today", False))
+
+
+def animal_needs_feed(tile: Any) -> bool:
+    return has_animal(tile) and not bool(tile.get("fed_today", False))
 
 
 def crop_ready_to_harvest(tile: Dict[str, Any], day: int) -> bool:

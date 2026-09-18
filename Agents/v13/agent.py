@@ -21,10 +21,13 @@ def agent(obs: Dict[str, Any], config: Any = None) -> Dict[str, Any]:
             shed=state.shed,
             seeds=state.seeds,
             animals=state.animals,
+            tiles=state.tiles,
             unlocked_quads=state.unlocked_quadrants,
             unlocked_shops=state.unlocked_shops,
             hires_today=state.hires_today,
-            hands_count=len(state.hands_pos)
+            hands_count=len(state.hands_pos),
+            farmer_inv_items=state.farmer_inv_items,
+            hand_inv_items=state.hand_inv_items
         )
 
 

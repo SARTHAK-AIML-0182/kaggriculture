@@ -10,8 +10,10 @@ class GameState:
     money: float = 3000.0
     farmer_pos: Tuple[int, int] = (4, 4)
     farmer_inventory: int = 0
+    farmer_inv_items: Dict[str, int] = field(default_factory=dict)
     hands_pos: List[Tuple[int, int]] = field(default_factory=list)
     hand_inventories: List[int] = field(default_factory=list)
+    hand_inv_items: List[Dict[str, int]] = field(default_factory=list)
     unlocked_quadrants: List[str] = field(default_factory=lambda: ["NW"])
     tiles: List[List[Any]] = field(default_factory=list)
     shed: Dict[str, int] = field(default_factory=dict)
@@ -41,26 +43,29 @@ class GameState:
         raw_hands = farm.get("hands", [])
         hands_pos: List[Tuple[int, int]] = []
         hand_inventories: List[int] = []
+        hand_inv_items: List[Dict[str, int]] = []
 
         private = obs.get("private", {})
         raw_inventories = private.get("inventories", [])
-        farmer_inv_dict = raw_inventories[0] if (isinstance(raw_inventories, list) and len(raw_inventories) > 0 and isinstance(raw_inventories[0], dict)) else {}
-        farmer_inventory = sum(farmer_inv_dict.values())
+        farmer_inv_items = dict(raw_inventories[0]) if (isinstance(raw_inventories, list) and len(raw_inventories) > 0 and isinstance(raw_inventories[0], dict)) else {}
+        farmer_inventory = sum(farmer_inv_items.values())
 
         for idx, h in enumerate(raw_hands):
             if isinstance(h, (list, tuple)) and len(h) >= 2:
                 hands_pos.append((int(h[0]), int(h[1])))
-                # Hand inventory index in private["inventories"] is idx + 1 (idx 0 is farmer)
-                if isinstance(raw_inventories, list) and (idx + 1) < len(raw_inventories):
-                    inv_dict = raw_inventories[idx + 1]
-                    hand_inventories.append(sum(inv_dict.values()) if isinstance(inv_dict, dict) else 0)
+                if isinstance(raw_inventories, list) and (idx + 1) < len(raw_inventories) and isinstance(raw_inventories[idx + 1], dict):
+                    inv_dict = dict(raw_inventories[idx + 1])
+                    hand_inv_items.append(inv_dict)
+                    hand_inventories.append(sum(inv_dict.values()))
                 else:
+                    hand_inv_items.append({})
                     hand_inventories.append(0)
             elif isinstance(h, dict):
                 pos = h.get("pos", [4, 4])
                 hands_pos.append((int(pos[0]), int(pos[1])))
-                inv = h.get("items", {})
-                hand_inventories.append(sum(inv.values()) if isinstance(inv, dict) else 0)
+                inv = dict(h.get("items", {}))
+                hand_inv_items.append(inv)
+                hand_inventories.append(sum(inv.values()))
 
 
         unlocked_quadrants = farm.get("unlocked_quadrants", ["NW"])
@@ -90,8 +95,10 @@ class GameState:
             money=money,
             farmer_pos=farmer_pos,
             farmer_inventory=farmer_inventory,
+            farmer_inv_items=farmer_inv_items,
             hands_pos=hands_pos,
             hand_inventories=hand_inventories,
+            hand_inv_items=hand_inv_items,
             unlocked_quadrants=unlocked_quadrants,
             tiles=tiles,
             shed=shed,

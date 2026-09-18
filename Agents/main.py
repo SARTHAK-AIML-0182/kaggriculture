@@ -18,8 +18,10 @@ class GameState:
     money: float = 3000.0
     farmer_pos: Tuple[int, int] = (4, 4)
     farmer_inventory: int = 0
+    farmer_inv_items: Dict[str, int] = field(default_factory=dict)
     hands_pos: List[Tuple[int, int]] = field(default_factory=list)
     hand_inventories: List[int] = field(default_factory=list)
+    hand_inv_items: List[Dict[str, int]] = field(default_factory=list)
     unlocked_quadrants: List[str] = field(default_factory=lambda: ["NW"])
     tiles: List[List[Any]] = field(default_factory=list)
     shed: Dict[str, int] = field(default_factory=dict)
@@ -49,26 +51,29 @@ class GameState:
         raw_hands = farm.get("hands", [])
         hands_pos: List[Tuple[int, int]] = []
         hand_inventories: List[int] = []
+        hand_inv_items: List[Dict[str, int]] = []
 
         private = obs.get("private", {})
         raw_inventories = private.get("inventories", [])
-        farmer_inv_dict = raw_inventories[0] if (isinstance(raw_inventories, list) and len(raw_inventories) > 0 and isinstance(raw_inventories[0], dict)) else {}
-        farmer_inventory = sum(farmer_inv_dict.values())
+        farmer_inv_items = dict(raw_inventories[0]) if (isinstance(raw_inventories, list) and len(raw_inventories) > 0 and isinstance(raw_inventories[0], dict)) else {}
+        farmer_inventory = sum(farmer_inv_items.values())
 
         for idx, h in enumerate(raw_hands):
             if isinstance(h, (list, tuple)) and len(h) >= 2:
                 hands_pos.append((int(h[0]), int(h[1])))
-                # Hand inventory index in private["inventories"] is idx + 1 (idx 0 is farmer)
-                if isinstance(raw_inventories, list) and (idx + 1) < len(raw_inventories):
-                    inv_dict = raw_inventories[idx + 1]
-                    hand_inventories.append(sum(inv_dict.values()) if isinstance(inv_dict, dict) else 0)
+                if isinstance(raw_inventories, list) and (idx + 1) < len(raw_inventories) and isinstance(raw_inventories[idx + 1], dict):
+                    inv_dict = dict(raw_inventories[idx + 1])
+                    hand_inv_items.append(inv_dict)
+                    hand_inventories.append(sum(inv_dict.values()))
                 else:
+                    hand_inv_items.append({})
                     hand_inventories.append(0)
             elif isinstance(h, dict):
                 pos = h.get("pos", [4, 4])
                 hands_pos.append((int(pos[0]), int(pos[1])))
-                inv = h.get("items", {})
-                hand_inventories.append(sum(inv.values()) if isinstance(inv, dict) else 0)
+                inv = dict(h.get("items", {}))
+                hand_inv_items.append(inv)
+                hand_inventories.append(sum(inv.values()))
 
 
         unlocked_quadrants = farm.get("unlocked_quadrants", ["NW"])
@@ -98,8 +103,10 @@ class GameState:
             money=money,
             farmer_pos=farmer_pos,
             farmer_inventory=farmer_inventory,
+            farmer_inv_items=farmer_inv_items,
             hands_pos=hands_pos,
             hand_inventories=hand_inventories,
+            hand_inv_items=hand_inv_items,
             unlocked_quadrants=unlocked_quadrants,
             tiles=tiles,
             shed=shed,
@@ -132,11 +139,11 @@ HARVEST_AGE = {
 }
 
 LAST_PLANT_DAY = {
-    "WHEAT": 26,
-    "CARROT": 26,
+    "WHEAT": 25,
+    "CARROT": 25,
     "TOMATO": 15,
     "STRAWBERRY": 15,
-    "MELON": 17,
+    "MELON": 15,
 }
 
 
@@ -194,6 +201,61 @@ def is_coop(tile: Any) -> bool:
     return isinstance(tile, dict) and tile.get("kind") == "COOP"
 
 
+QUADRANT_SHED_TILES = {
+    "NW": (4, 4),
+    "NE": (5, 4),
+    "SW": (4, 5),
+    "SE": (5, 5),
+}
+
+STRUCTURE_TILES = {
+    (3, 4): ("PASTURE", "SHEEP", "NW"),
+    (6, 4): ("PASTURE", "COW", "NE"),
+    (3, 5): ("COOP", "GOOSE", "SW"),
+    (6, 5): ("PASTURE", "SHEEP", "SE"),
+}
+
+ANIMALS_CONFIG = {
+    "SHEEP": {"cost": 500, "structure": "PASTURE", "product": "WOOL", "interval": 3},
+    "COW": {"cost": 400, "structure": "PASTURE", "product": "MILK", "interval": 2},
+    "GOOSE": {"cost": 300, "structure": "COOP", "product": "EGG", "interval": 1},
+}
+
+
+def count_free_unlocked_tiles(tiles: List[List[Any]]) -> int:
+    cnt = 0
+    for row in tiles:
+        if isinstance(row, list):
+            for t in row:
+                if unlocked(t) and is_free(t):
+                    cnt += 1
+    return cnt
+
+
+def has_animal(tile: Any) -> bool:
+    return isinstance(tile, dict) and "animal" in tile
+
+
+def is_empty_structure(tile: Any) -> bool:
+    return isinstance(tile, dict) and tile.get("kind") in ("PASTURE", "COOP") and "animal" not in tile
+
+
+def animal_ready_to_harvest(tile: Any) -> bool:
+    return has_animal(tile) and int(tile.get("yield_units", 0)) > 0
+
+
+def animal_has_fertilizer(tile: Any) -> bool:
+    return has_animal(tile) and bool(tile.get("fertilizer_available", False))
+
+
+def animal_needs_care(tile: Any) -> bool:
+    return has_animal(tile) and not bool(tile.get("cared_today", False))
+
+
+def animal_needs_feed(tile: Any) -> bool:
+    return has_animal(tile) and not bool(tile.get("fed_today", False))
+
+
 def crop_ready_to_harvest(tile: Dict[str, Any], day: int) -> bool:
     if not isinstance(tile, dict) or tile.get("kind") != "PLANT":
         return False
@@ -235,18 +297,19 @@ def get_cumulative_hire_cost(num_hires: int) -> int:
 def determine_target_hires(day: int, money: float, quad_count: int) -> int:
     """Determine optimal daily hired hands count based on day, money, and farm size."""
     if day >= 29:
-        return 0
+        return 4 if money >= 500 else 2
 
+    # Days 0-1: Fast start (4 hands = $350, easily funded by $3,000 starting cash)
     if day <= 1:
-        return 2 if money >= 300 else 1
+        return 4 if money >= 1200 else (2 if money >= 400 else 1)
 
+    # Days 2-3:
     if day <= 3:
-        return 3 if money >= 1000 else 2
+        return 4 if money >= 1200 else (3 if money >= 600 else 2)
 
-    # Days 4 to 27: High-efficiency workforce (2 hands for 48 tiles, 3 for 72, 4 for 96)
-    # Minimizes cumulative hire overhead while fully covering watering and harvesting
-    desired_by_quad = {1: 2, 2: 2, 3: 3, 4: 4}
-    target_desired = desired_by_quad.get(quad_count, 3)
+    # Days 4 to 28: Dedicated workforce (1 worker per unlocked quadrant + rover)
+    desired_by_quad = {1: 2, 2: 3, 3: 4, 4: 4}
+    target_desired = desired_by_quad.get(quad_count, 4)
 
     for target in range(target_desired, 0, -1):
         cost = get_cumulative_hire_cost(target)
@@ -260,32 +323,29 @@ def choose_crop(day: int, seeds: Dict[str, int]) -> str:
     """
     Seasonal Crop Choice Engine:
     - Phase 1 (Days 0-6): CARROT (fast cash compounding to unlock all 4 quadrants)
-    - Phase 2 (Days 7-16): MELON (base $250 jackpot) / CARROT
-    - Phase 3 (Days 17-25): CARROT (3-day turnaround)
-    - Phase 4 (Days > 25): Stop planting
+    - Phase 2 (Days 7-14): MELON (base $250 jackpot) / CARROT
+    - Phase 3 (Days 15-24): CARROT (3-day turnaround)
+    - Phase 4 (Days > 24): Stop planting
     """
-    if day > 25:
+    if day > 24:
         return "CARROT"
 
     if day <= 6:
         preferred = ["CARROT", "WHEAT"]
-    elif day <= 16:
+    elif day <= 14:
         preferred = ["MELON", "CARROT", "WHEAT"]
     else:
         preferred = ["CARROT", "WHEAT"]
 
     for crop in preferred:
-        if day <= LAST_PLANT_DAY.get(crop, 26) and int(seeds.get(crop, 0)) > 0:
+        if day <= LAST_PLANT_DAY.get(crop, 25) and int(seeds.get(crop, 0)) > 0:
             return crop
 
     for crop in preferred:
-        if day <= LAST_PLANT_DAY.get(crop, 26):
+        if day <= LAST_PLANT_DAY.get(crop, 25):
             return crop
 
     return "CARROT"
-
-
-
 
 
 # --- Module: market.py ---
@@ -329,102 +389,175 @@ def generate_market_orders(
     shed: Dict[str, int],
     seeds: Dict[str, int],
     animals: Dict[str, int],
+    tiles: List[List[Any]],
     unlocked_quads: List[str],
     unlocked_shops: List[Dict[str, Any]],
     hires_today: int,
-    hands_count: int
+    hands_count: int,
+    farmer_inv_items: Dict[str, int] = None,
+    hand_inv_items: List[Dict[str, int]] = None,
 ) -> List[List[Any]]:
     orders: List[List[Any]] = []
+    cur_money = float(money)
 
-    # 1. Town shop demand lookup
+    if farmer_inv_items is None:
+        farmer_inv_items = {}
+    if hand_inv_items is None:
+        hand_inv_items = []
+
+    # 1. Animal presence check & town shop demand lookup
+    has_any_animal = any(
+        has_animal(tile_at(tiles, p[0], p[1])) for p in STRUCTURE_TILES.keys()
+    )
     town_demands = extract_town_demands(unlocked_shops)
 
-    # 2. Drip-Selling Engine
+    # 2. Drip-Selling Engine (Guarantees zero unsold goods by Day 29)
     ordered_items = [item for item in SELL_PRIORITY_ORDER if item in town_demands]
     ordered_items.extend([item for item in SELL_PRIORITY_ORDER if item not in town_demands])
 
     for item in ordered_items:
         count = int(shed.get(item, 0))
+        # Keep at least 4 wheat as feed during season
+        if item == "WHEAT" and has_any_animal and day < 28:
+            count = max(0, count - 4)
+
         if count > 0 and len(orders) < 6:
-            # Final turns of the game: dump everything remaining in shed to guarantee zero unsold
-            if day == 29 and turn >= 20:
+            # Final days of the game: sell 100% of shed inventory immediately
+            if day >= 28:
                 orders.append(["SELL", item, count])
             else:
                 if item in BULK_ITEMS:
-                    batch = min(count, 30 if item in town_demands else 25)
+                    batch = min(count, 35 if item in town_demands else 25)
                 elif item in MEDIUM_ELASTICITY_ITEMS:
-                    batch = min(count, 10 if item in town_demands else 6)
+                    batch = min(count, 12 if item in town_demands else 8)
                 else:  # High elasticity: MELON, WOOL
-                    batch = min(count, 6 if day >= 27 else (4 if item in town_demands else 3))
+                    batch = min(count, 6 if day >= 25 else (4 if item in town_demands else 3))
 
                 if batch > 0:
                     orders.append(["SELL", item, batch])
 
-    # 3. Worker Hiring (Issued early in the day)
-    quad_count = len(unlocked_quads)
-    target_hires = determine_target_hires(day, money, quad_count)
+    # 3. Worker Hiring (Scaled to unlocked quadrants)
+    quad_count = len(unlocked_quads) if unlocked_quads else 1
+    target_hires = determine_target_hires(day, cur_money, quad_count)
     needed_hires = max(0, target_hires - hires_today)
     for _ in range(min(needed_hires, 8 - len(orders))):
-        orders.append(["HIRE"])
+        if cur_money >= 50:
+            orders.append(["HIRE"])
+            cur_money -= 50
 
-    # 4. Land Expansion (NE $1k, SW $2k, SE $4k) - Rapid expansion compounds production
+    # 4. Land Expansion (NE $1k, SW $2k, SE $4k)
+    # Guaranteed unlock progression: Land 1 Day 0-1, Land 2 Day 3-4, Land 3 (Quadrant 4) Day 6-8
     if day <= 22 and quad_count < 4 and len(orders) < 9:
-        if quad_count == 1 and money >= 1800:
+        if quad_count == 1 and cur_money >= 1100:
             orders.append(["BUY_LAND"])
-        elif quad_count == 2 and money >= 2400:
+            cur_money -= 1000
+            quad_count += 1
+        elif quad_count == 2 and cur_money >= 2150:
             orders.append(["BUY_LAND"])
-        elif quad_count == 3 and money >= 4500:
+            cur_money -= 2000
+            quad_count += 1
+        elif quad_count == 3 and cur_money >= 4050:
             orders.append(["BUY_LAND"])
+            cur_money -= 4000
+            quad_count += 1
 
-    # 5. Dynamic Seed Purchasing Engine (Guarantees orders never exceed liquid cash)
-    if day <= 25 and len(orders) < 9:
-        carrot_seeds = int(seeds.get("CARROT", 0))
-        wheat_seeds = int(seeds.get("WHEAT", 0))
-        melon_seeds = int(seeds.get("MELON", 0))
-        target_farm_seeds = min(quad_count * 24, 96)
+    # 5. Livestock Acquisition
+    # Buy sheep, cow, goose when structure is ready or scheduled and money allows
+    if day <= 24 and len(orders) < 9:
+        for struct_pos, (struct_type, animal_name, quad) in STRUCTURE_TILES.items():
+            tx, ty = struct_pos
+            t = tile_at(tiles, tx, ty)
+            if not unlocked(t):
+                continue
+            if has_animal(t):
+                continue
+            # Already in shed?
+            if int(shed.get(animal_name, 0)) > 0:
+                continue
+            # Carried by farmer or hands?
+            carried = (farmer_inv_items.get(animal_name, 0) > 0) or any(
+                h.get(animal_name, 0) > 0 for h in hand_inv_items
+            )
+            if carried:
+                continue
 
-        if day <= 6:
-            # Phase 1 & 2 (Days 0-6): Rapid capital accumulation via Carrots to buy all 4 quads
-            target_carrots = target_farm_seeds
-            if carrot_seeds < target_carrots:
-                can_buy = min(target_carrots - carrot_seeds, int(max(0, money - 200) // 20))
+            cost = ANIMALS_CONFIG[animal_name]["cost"]
+            # Buy if structure exists or is free tile scheduled to be built
+            if is_empty_structure(t) or (is_free(t) and day >= 1):
+                if cur_money >= cost + 200:
+                    orders.append(["BUY_ANIMAL", animal_name, 1])
+                    cur_money -= cost
+                    break  # Buy at most 1 animal at a time for orderly placement
+
+    # Animal Feed (Wheat) purchasing when livestock exists
+    if has_any_animal and int(shed.get("WHEAT", 0)) < 4 and cur_money >= 80 and len(orders) < 9:
+        orders.append(["BUY_PRODUCT", "WHEAT", 2])
+        cur_money -= 24
+
+    # 6. Zero-Waste Dynamic Seed Purchasing Engine
+    # Strictly buy seeds up to Day 20, in small digestible batches (max 20 seeds/day)
+    # Zero seeds bought after Day 20 guarantees ZERO leftover seeds in pocket!
+    if day <= 20 and len(orders) < 9:
+        unplanted_tiles = count_free_unlocked_tiles(tiles)
+        empty_struct_reserved = sum(
+            1 for p in STRUCTURE_TILES.keys()
+            if unlocked(tile_at(tiles, p[0], p[1])) and is_free(tile_at(tiles, p[0], p[1]))
+        )
+        unplanted_crop_tiles = max(0, unplanted_tiles - empty_struct_reserved)
+
+        total_seeds_owned = sum(int(v) for v in seeds.values())
+
+        if day <= 16:
+            target_seed_pocket = 20
+        elif day <= 18:
+            target_seed_pocket = 12
+        elif day <= 20:
+            target_seed_pocket = 6
+        else:
+            target_seed_pocket = 0
+
+        needed_seeds = max(0, min(target_seed_pocket, unplanted_crop_tiles) - total_seeds_owned)
+        needed_seeds = min(needed_seeds, 16)
+
+        if needed_seeds > 0 and cur_money >= 20:
+            if day <= 6:
+                # Phase 1: Fast Carrot compounding to fund all 4 quadrants
+                can_buy = min(needed_seeds, int(max(0, cur_money - 100) // 20))
                 if can_buy > 0:
                     orders.append(["BUY_SEED", "CARROT", can_buy])
-            elif wheat_seeds < 10:
-                can_buy = min(10 - wheat_seeds, int(max(0, money - 100) // 10))
-                if can_buy > 0:
-                    orders.append(["BUY_SEED", "WHEAT", can_buy])
-        elif day <= 16:
-            # Phase 3 (Days 7-16): With all 4 quads unlocked, plant up to 64 Melons and keep Carrots on the rest
-            target_melons = min(int(target_farm_seeds * 0.65), 64)
-            target_carrots = max(24, target_farm_seeds - target_melons)
-            if (quad_count == 4 or (day >= 10 and quad_count >= 3)) and melon_seeds < target_melons:
-                can_buy = min(target_melons - melon_seeds, int(max(0, money - 300) // 80))
-                if can_buy > 0:
-                    orders.append(["BUY_SEED", "MELON", can_buy])
-            elif carrot_seeds < target_carrots:
-                can_buy = min(target_carrots - carrot_seeds, int(max(0, money - 150) // 20))
-                if can_buy > 0:
-                    orders.append(["BUY_SEED", "CARROT", can_buy])
-        elif day <= 25:
-            # Phase 4 (Days 17-25): Carrots to the finish line
-            if carrot_seeds < target_farm_seeds:
-                can_buy = min(target_farm_seeds - carrot_seeds, int(max(0, money - 150) // 20))
-                if can_buy > 0:
-                    orders.append(["BUY_SEED", "CARROT", can_buy])
-            elif wheat_seeds < 15:
-                can_buy = min(15 - wheat_seeds, int(max(0, money - 50) // 10))
-                if can_buy > 0:
-                    orders.append(["BUY_SEED", "WHEAT", can_buy])
+                    cur_money -= can_buy * 20
+            elif day <= 13:
+                # Phase 2: Melons (jackpot $250) up to 36 max, rest Carrots
+                current_melons_growing = sum(
+                    1 for row in tiles if isinstance(row, list)
+                    for tile in row if isinstance(tile, dict) and tile.get("crop") == "MELON"
+                )
+                melon_seeds = int(seeds.get("MELON", 0))
+                target_melons = 36
+                can_buy_melon = min(
+                    needed_seeds,
+                    10,
+                    max(0, target_melons - (current_melons_growing + melon_seeds)),
+                    int(max(0, cur_money - 200) // 80)
+                )
+                if can_buy_melon > 0:
+                    orders.append(["BUY_SEED", "MELON", can_buy_melon])
+                    cur_money -= can_buy_melon * 80
+                    needed_seeds -= can_buy_melon
 
+                if needed_seeds > 0 and cur_money >= 20:
+                    can_buy_carrot = min(needed_seeds, int(max(0, cur_money - 100) // 20))
+                    if can_buy_carrot > 0:
+                        orders.append(["BUY_SEED", "CARROT", can_buy_carrot])
+                        cur_money -= can_buy_carrot * 20
+            elif day <= 20:
+                # Phase 3: Final Carrot sprint (3-day cycle)
+                can_buy = min(needed_seeds, int(max(0, cur_money - 100) // 20))
+                if can_buy > 0:
+                    orders.append(["BUY_SEED", "CARROT", can_buy])
+                    cur_money -= can_buy * 20
 
     return orders[:10]
-
-
-def private_animals_count(animals: Dict[str, int], shed: Dict[str, int], animal_name: str) -> int:
-    return int(animals.get(animal_name, 0)) + int(shed.get(animal_name, 0))
-
-
 
 
 # --- Module: planner.py ---
@@ -435,6 +568,7 @@ def build_task_queue(state: GameState) -> List[Dict[str, Any]]:
     day = state.day
     tiles = state.tiles
 
+    # General Farm Tiles (Crops, Weeds, Planting)
     for y, row in enumerate(tiles):
         if not isinstance(row, list):
             continue
@@ -443,6 +577,9 @@ def build_task_queue(state: GameState) -> List[Dict[str, Any]]:
                 continue
 
             pos = (x, y)
+            # Reserved structure positions are handled via worker local animal engine
+            if pos in STRUCTURE_TILES:
+                continue
 
             if is_weed(tile):
                 tasks.append({
@@ -481,8 +618,8 @@ def build_task_queue(state: GameState) -> List[Dict[str, Any]]:
                 continue
 
             if is_free(tile):
-                # Plant up to Day 25 and within turns 0-21 (leaves turn 22-23 to water)
-                if day <= 25 and state.turn <= 21:
+                # Plant up to Day 24 and within turns 0-21
+                if day <= 24 and state.turn <= 21:
                     tasks.append({
                         "priority": 30,
                         "pos": pos,
@@ -493,8 +630,6 @@ def build_task_queue(state: GameState) -> List[Dict[str, Any]]:
     return tasks
 
 
-
-
 def solve_worker_actions(
     state: GameState,
     tasks: List[Dict[str, Any]]
@@ -502,21 +637,102 @@ def solve_worker_actions(
     workers: List[Tuple[int, int]] = [state.farmer_pos]
     workers.extend(state.hands_pos)
 
-    turn_in_day = state.turn
     available_seeds = {k: int(v) for k, v in state.seeds.items() if int(v) > 0}
-
     actions: List[List[str]] = [["PASS"] for _ in workers]
     used_tasks: Set[int] = set()
 
     unlocked_quads = state.unlocked_quadrants if state.unlocked_quadrants else ["NW"]
 
     for worker_idx, worker_pos in enumerate(workers):
-        # On days 0-28, end-of-day engine automatically drops all worker inventories to shed.
-        # Workers can continuously work their quadrants without wasting turns walking to shed.
+        # Determine worker inventory items
+        if worker_idx == 0:
+            w_inv = state.farmer_inv_items
+        else:
+            h_idx = worker_idx - 1
+            w_inv = state.hand_inv_items[h_idx] if h_idx < len(state.hand_inv_items) else {}
 
+        # 1. Local Quadrant Livestock Engine
         assigned_quad = unlocked_quads[worker_idx % len(unlocked_quads)]
         q_xmin, q_xmax, q_ymin, q_ymax = QUADRANTS.get(assigned_quad, (0, 9, 0, 9))
+        local_shed_tile = QUADRANT_SHED_TILES.get(assigned_quad, (4, 4))
 
+        # Check if this worker's quadrant hosts a structure tile
+        local_struct_pos = None
+        local_struct_type = None
+        local_animal_name = None
+        for spos, (stype, aname, squad) in STRUCTURE_TILES.items():
+            if squad == assigned_quad:
+                local_struct_pos = spos
+                local_struct_type = stype
+                local_animal_name = aname
+                break
+
+        handled_animal = False
+        if local_struct_pos and unlocked(tile_at(state.tiles, local_struct_pos[0], local_struct_pos[1])):
+            stile = tile_at(state.tiles, local_struct_pos[0], local_struct_pos[1])
+
+            # A. If carrying this animal, walk to empty structure & place
+            if w_inv.get(local_animal_name, 0) > 0:
+                if worker_pos != local_struct_pos:
+                    actions[worker_idx] = move_towards(worker_pos, local_struct_pos)
+                else:
+                    actions[worker_idx] = ["PLACE", local_animal_name]
+                handled_animal = True
+
+            # B. If structure is free, construct it!
+            elif is_free(stile):
+                if worker_pos != local_struct_pos:
+                    actions[worker_idx] = move_towards(worker_pos, local_struct_pos)
+                else:
+                    actions[worker_idx] = ["BUILD_" + local_struct_type]
+                handled_animal = True
+
+            # C. If structure is empty and animal is waiting in shed, pick it up!
+            elif is_empty_structure(stile) and int(state.shed.get(local_animal_name, 0)) > 0:
+                if worker_pos != local_shed_tile:
+                    actions[worker_idx] = move_towards(worker_pos, local_shed_tile)
+                else:
+                    actions[worker_idx] = ["PICKUP", local_animal_name, 1]
+                handled_animal = True
+
+            # D. If animal is on tile, perform daily care, feed, fertilizer, and harvest!
+            elif has_animal(stile):
+                if animal_ready_to_harvest(stile):
+                    if worker_pos != local_struct_pos:
+                        actions[worker_idx] = move_towards(worker_pos, local_struct_pos)
+                    else:
+                        actions[worker_idx] = ["HARVEST"]
+                    handled_animal = True
+                elif animal_needs_feed(stile):
+                    if w_inv.get("WHEAT", 0) > 0:
+                        if worker_pos != local_struct_pos:
+                            actions[worker_idx] = move_towards(worker_pos, local_struct_pos)
+                        else:
+                            actions[worker_idx] = ["FEED"]
+                        handled_animal = True
+                    elif int(state.shed.get("WHEAT", 0)) > 0:
+                        if worker_pos != local_shed_tile:
+                            actions[worker_idx] = move_towards(worker_pos, local_shed_tile)
+                        else:
+                            actions[worker_idx] = ["PICKUP", "WHEAT", 1]
+                        handled_animal = True
+                elif animal_has_fertilizer(stile):
+                    if worker_pos != local_struct_pos:
+                        actions[worker_idx] = move_towards(worker_pos, local_struct_pos)
+                    else:
+                        actions[worker_idx] = ["COLLECT_FERTILIZER"]
+                    handled_animal = True
+                elif animal_needs_care(stile):
+                    if worker_pos != local_struct_pos:
+                        actions[worker_idx] = move_towards(worker_pos, local_struct_pos)
+                    else:
+                        actions[worker_idx] = ["CARE"]
+                    handled_animal = True
+
+        if handled_animal:
+            continue
+
+        # 2. General Quadrant Crop Tasks
         best_idx = None
         best_key = None
 
@@ -526,18 +742,16 @@ def solve_worker_actions(
 
             target = task["pos"]
             tx, ty = target
+            action_op = task["action"][0]
 
-            # If task is PLANT, ensure we actually have seeds in available_seeds
-            if task["action"][0] == "PLANT":
+            # If task is PLANT, ensure we have seeds
+            if action_op == "PLANT":
                 current_crop = choose_crop(state.day, available_seeds)
                 if available_seeds.get(current_crop, 0) <= 0:
                     continue
 
-            if worker_idx > 0:
-                out_of_bounds_penalty = 0 if (q_xmin <= tx <= q_xmax and q_ymin <= ty <= q_ymax) else 40
-            else:
-                out_of_bounds_penalty = 0
-
+            # Strong quadrant locality keeps workers focused on their 24 tiles
+            out_of_bounds_penalty = 0 if (q_xmin <= tx <= q_xmax and q_ymin <= ty <= q_ymax) else 50
             dist = manhattan(worker_pos, target)
             key = (int(task["priority"]) + out_of_bounds_penalty, dist, ty, tx)
 
@@ -554,6 +768,10 @@ def solve_worker_actions(
 
         if worker_pos != target:
             actions[worker_idx] = move_towards(worker_pos, target)
+            if task_action[0] == "PLANT":
+                current_crop = choose_crop(state.day, available_seeds)
+                if available_seeds.get(current_crop, 0) > 0:
+                    available_seeds[current_crop] -= 1
         else:
             if task_action[0] == "PLANT":
                 current_crop = choose_crop(state.day, available_seeds)
@@ -571,7 +789,6 @@ def solve_worker_actions(
     hand_actions = actions[1:] if len(actions) > 1 else []
 
     return farmer_action, hand_actions
-
 
 
 # --- Module: actions.py ---
@@ -627,10 +844,13 @@ def agent(obs: Dict[str, Any], config: Any = None) -> Dict[str, Any]:
             shed=state.shed,
             seeds=state.seeds,
             animals=state.animals,
+            tiles=state.tiles,
             unlocked_quads=state.unlocked_quadrants,
             unlocked_shops=state.unlocked_shops,
             hires_today=state.hires_today,
-            hands_count=len(state.hands_pos)
+            hands_count=len(state.hands_pos),
+            farmer_inv_items=state.farmer_inv_items,
+            hand_inv_items=state.hand_inv_items
         )
 
 
