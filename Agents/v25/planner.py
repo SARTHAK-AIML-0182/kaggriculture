@@ -115,13 +115,13 @@ def solve_worker_actions(
             h_idx = worker_idx - 1
             w_inv = state.hand_inv_items[h_idx] if h_idx < len(state.hand_inv_items) else {}
 
-        # 1. Local Quadrant Livestock Engine (Supports 10 Cows & 2 Geese)
-        # 3 workers assigned to NW, 3 workers assigned to NE
         assigned_quad = unlocked_quads[worker_idx % len(unlocked_quads)]
         q_xmin, q_xmax, q_ymin, q_ymax = QUADRANTS.get(assigned_quad, (0, 9, 0, 9))
         local_shed_tile = QUADRANT_SHED_TILES.get(assigned_quad, (4, 4))
 
-        # Check structure tiles in this worker's quadrant
+        # 1. Local Quadrant Livestock Engine (Supports 1 Goose, 2 Sheep, 3 Cows across NW, NE, SW)
+        # Each quadrant has at most 2 animals located 1 step from that quadrant's shed tile.
+        # Workers service their quadrant's animal in 1-2 turns, then spend 22 turns on CROP CULTIVATION!
         handled_animal = False
         for spos, (stype, aname, squad) in STRUCTURE_TILES.items():
             if squad != assigned_quad:
@@ -143,7 +143,19 @@ def solve_worker_actions(
                 handled_animal = True
                 break
 
-            # B. If structure is free, construct it!
+            # B. If structure is empty and animal is waiting in shed, pick it up!
+            elif is_empty_structure(stile) and int(state.shed.get(aname, 0)) > 0:
+                is_carrying = any(w_inv.get(a, 0) > 0 for a in ANIMALS_CONFIG.keys())
+                if not is_carrying:
+                    if worker_pos != local_shed_tile:
+                        actions[worker_idx] = move_towards(worker_pos, local_shed_tile)
+                    else:
+                        actions[worker_idx] = ["PICKUP", aname, 1]
+                    claimed_structures.add(spos)
+                    handled_animal = True
+                    break
+
+            # C. If structure is free, construct it!
             elif is_free(stile):
                 if worker_pos != spos:
                     actions[worker_idx] = move_towards(worker_pos, spos)
@@ -153,27 +165,10 @@ def solve_worker_actions(
                 handled_animal = True
                 break
 
-            # C. If structure is empty and animal is waiting in shed, pick it up!
-            elif is_empty_structure(stile) and int(state.shed.get(aname, 0)) > 0:
-                if worker_pos != local_shed_tile:
-                    actions[worker_idx] = move_towards(worker_pos, local_shed_tile)
-                else:
-                    actions[worker_idx] = ["PICKUP", aname, 1]
-                claimed_structures.add(spos)
-                handled_animal = True
-                break
-
-            # D. If animal is on tile, perform daily maintenance
+            # D. Placed animal maintenance (FEED, FERTILIZER, HARVEST) - NO CARE!
             elif has_animal(stile):
-                if animal_ready_to_harvest(stile):
-                    if worker_pos != spos:
-                        actions[worker_idx] = move_towards(worker_pos, spos)
-                    else:
-                        actions[worker_idx] = ["HARVEST"]
-                    claimed_structures.add(spos)
-                    handled_animal = True
-                    break
-                elif animal_needs_feed(stile):
+                # Priority 1: Feed if unfed
+                if animal_needs_feed(stile):
                     if w_inv.get("WHEAT", 0) > 0:
                         if worker_pos != spos:
                             actions[worker_idx] = move_towards(worker_pos, spos)
@@ -186,11 +181,22 @@ def solve_worker_actions(
                         if worker_pos != local_shed_tile:
                             actions[worker_idx] = move_towards(worker_pos, local_shed_tile)
                         else:
-                            take_qty = min(2, int(state.shed.get("WHEAT", 0)))
-                            actions[worker_idx] = ["PICKUP", "WHEAT", take_qty]
+                            actions[worker_idx] = ["PICKUP", "WHEAT", 2]
                         claimed_structures.add(spos)
                         handled_animal = True
                         break
+
+                # Priority 2: Harvest mature animal products (Milk, Wool, Eggs)
+                elif animal_ready_to_harvest(stile):
+                    if worker_pos != spos:
+                        actions[worker_idx] = move_towards(worker_pos, spos)
+                    else:
+                        actions[worker_idx] = ["HARVEST"]
+                    claimed_structures.add(spos)
+                    handled_animal = True
+                    break
+
+                # Priority 3: Collect daily fertilizer
                 elif animal_has_fertilizer(stile):
                     if worker_pos != spos:
                         actions[worker_idx] = move_towards(worker_pos, spos)
@@ -199,6 +205,8 @@ def solve_worker_actions(
                     claimed_structures.add(spos)
                     handled_animal = True
                     break
+
+                # Priority 4: Animal care (yields bonus product units)
                 elif animal_needs_care(stile):
                     if worker_pos != spos:
                         actions[worker_idx] = move_towards(worker_pos, spos)

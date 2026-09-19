@@ -87,22 +87,24 @@ QUADRANT_SHED_TILES = {
     "SE": (5, 5),
 }
 
-# 10 Cows (Pastures) and 2 Geese (Coops) clustered closely around shed tiles (4,4) & (5,4)
+# 1 Goose (Coop), 2 Sheep (Pastures), 10 Cows (Pastures) clustered around shed (4,4), (5,4), (4,5)
 STRUCTURE_TILES = {
-    # NW Quadrant (5 Cows + 1 Goose)
-    (3, 4): ("PASTURE", "COW", "NW"),
+    # NW Quadrant (1 Goose, 1 Sheep, 3 Cows)
+    (4, 2): ("COOP", "GOOSE", "NW"),
+    (3, 4): ("PASTURE", "SHEEP", "NW"),
     (2, 4): ("PASTURE", "COW", "NW"),
     (3, 3): ("PASTURE", "COW", "NW"),
     (4, 3): ("PASTURE", "COW", "NW"),
-    (2, 3): ("PASTURE", "COW", "NW"),
-    (4, 2): ("COOP", "GOOSE", "NW"),
-    # NE Quadrant (5 Cows + 1 Goose)
-    (6, 4): ("PASTURE", "COW", "NE"),
+    # NE Quadrant (1 Sheep, 4 Cows)
+    (6, 4): ("PASTURE", "SHEEP", "NE"),
     (7, 4): ("PASTURE", "COW", "NE"),
     (6, 3): ("PASTURE", "COW", "NE"),
     (5, 3): ("PASTURE", "COW", "NE"),
     (7, 3): ("PASTURE", "COW", "NE"),
-    (5, 2): ("COOP", "GOOSE", "NE"),
+    # SW Quadrant (3 Cows)
+    (3, 5): ("PASTURE", "COW", "SW"),
+    (4, 6): ("PASTURE", "COW", "SW"),
+    (3, 6): ("PASTURE", "COW", "SW"),
 }
 
 ANIMALS_CONFIG = {

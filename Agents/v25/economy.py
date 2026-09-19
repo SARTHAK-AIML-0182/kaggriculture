@@ -22,14 +22,15 @@ def determine_target_hires(day: int, money: float, quad_count: int) -> int:
     if day >= 29:
         return 5 if money >= 600 else 3
 
-    # Days 0-1: Fast start (4-5 hands funded by $3,000 starting cash)
+    # Days 0-1: Fast start (4-5 hands funded by starting cash)
     if day <= 1:
         return 5 if money >= 1200 else (4 if money >= 600 else 2)
 
-    # Days 2 to 28: Strong workforce of 5 hands (cost $600/day)
-    for target in range(5, 1, -1):
+    # Days 2 to 28: Strong workforce of 5-6 hands (6-7 workers total across 72 tiles)
+    max_target = 6 if (quad_count >= 3 and money >= 2500) else 5
+    for target in range(max_target, 1, -1):
         cost = get_cumulative_hire_cost(target)
-        if money >= cost + 150:
+        if money >= cost + 200:
             return target
 
     return 2 if money >= 100 else 1
